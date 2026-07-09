@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>シンプル電卓</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1f2937, #111827);
+    font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  }
+
+  .calculator {
+    width: 320px;
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  .display {
+    background: #0f172a;
+    color: #f8fafc;
+    border-radius: 10px;
+    padding: 20px 16px;
+    margin-bottom: 16px;
+    text-align: right;
+    overflow: hidden;
+  }
+
+  .display .expression {
+    min-height: 20px;
+    font-size: 14px;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+
+  .display .result {
+    font-size: 36px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  button {
+    border: none;
+    outline: none;
+    border-radius: 10px;
+    padding: 18px 0;
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    background: #334155;
+    color: #f8fafc;
+    transition: filter 0.15s ease, transform 0.05s ease;
+  }
+
+  button:hover {
+    filter: brightness(1.15);
+  }
+
+  button:active {
+    transform: scale(0.96);
+  }
+
+  button.operator {
+    background: #f97316;
+  }
+
+  button.equal {
+    background: #22c55e;
+    grid-column: span 2;
+  }
+
+  button.clear {
+    background: #ef4444;
+  }
+
+  button.zero {
+    grid-column: span 2;
+  }
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <div class="display">
+    <div class="expression" id="expression">&nbsp;</div>
+    <div class="result" id="result">0</div>
+  </div>
+
+  <div class="buttons">
+    <button class="clear" onclick="clearAll()">C</button>
+    <button onclick="deleteLast()">DEL</button>
+    <button onclick="chooseOperator('%')" class="operator">%</button>
+    <button onclick="chooseOperator('/')" class="operator">÷</button>
+
+    <button onclick="appendNumber('7')">7</button>
+    <button onclick="appendNumber('8')">8</button>
+    <button onclick="appendNumber('9')">9</button>
+    <button onclick="chooseOperator('*')" class="operator">×</button>
+
+    <button onclick="appendNumber('4')">4</button>
+    <button onclick="appendNumber('5')">5</button>
+    <button onclick="appendNumber('6')">6</button>
+    <button onclick="chooseOperator('-')" class="operator">−</button>
+
+    <button onclick="appendNumber('1')">1</button>
+    <button onclick="appendNumber('2')">2</button>
+    <button onclick="appendNumber('3')">3</button>
+    <button onclick="chooseOperator('+')" class="operator">+</button>
+
+    <button class="zero" onclick="appendNumber('0')">0</button>
+    <button onclick="appendNumber('.')">.</button>
+    <button class="equal" onclick="calculate()">=</button>
+  </div>
+</div>
+
+<script>
+  let currentInput = '0';
+  let previousInput = '';
+  let operator = null;
+
+  const resultEl = document.getElementById('result');
+  const expressionEl = document.getElementById('expression');
+
+  function updateDisplay() {
+    resultEl.textContent = currentInput;
+    if (operator && previousInput !== '') {
+      expressionEl.textContent = `${previousInput} ${operatorSymbol(operator)}`;
+    } else {
+      expressionEl.textContent = ' ';
+    }
+  }
+
+  function operatorSymbol(op) {
+    switch (op) {
+      case '/': return '÷';
+      case '*': return '×';
+      case '-': return '−';
+      case '+': return '+';
+      case '%': return '%';
+      default: return '';
+    }
+  }
+
+  function appendNumber(num) {
+    if (num === '.' && currentInput.includes('.')) return;
+    if (currentInput === '0' && num !== '.') {
+      currentInput = num;
+    } else {
+      currentInput += num;
+    }
+    updateDisplay();
+  }
+
+  function chooseOperator(op) {
+    if (operator !== null && previousInput !== '' && currentInput !== '') {
+      calculate();
+    }
+    operator = op;
+    previousInput = currentInput;
+    currentInput = '0';
+    updateDisplay();
+  }
+
+  function calculate() {
+    if (operator === null || previousInput === '') return;
+
+    const prev = parseFloat(previousInput);
+    const curr = parseFloat(currentInput);
+    let result;
+
+    switch (operator) {
+      case '+':
+        result = prev + curr;
+        break;
+      case '-':
+        result = prev - curr;
+        break;
+      case '*':
+        result = prev * curr;
+        break;
+      case '/':
+        result = curr === 0 ? 'エラー' : prev / curr;
+        break;
+      case '%':
+        result = prev % curr;
+        break;
+      default:
+        return;
+    }
+
+    if (typeof result === 'number') {
+      result = Math.round(result * 1e10) / 1e10;
+    }
+
+    currentInput = String(result);
+    operator = null;
+    previousInput = '';
+    updateDisplay();
+  }
+
+  function clearAll() {
+    currentInput = '0';
+    previousInput = '';
+    operator = null;
+    updateDisplay();
+  }
+
+  function deleteLast() {
+    if (currentInput.length > 1) {
+      currentInput = currentInput.slice(0, -1);
+    } else {
+      currentInput = '0';
+    }
+    updateDisplay();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') appendNumber(e.key);
+    else if (e.key === '.') appendNumber('.');
+    else if (e.key === '+') chooseOperator('+');
+    else if (e.key === '-') chooseOperator('-');
+    else if (e.key === '*') chooseOperator('*');
+    else if (e.key === '/') { e.preventDefault(); chooseOperator('/'); }
+    else if (e.key === 'Enter' || e.key === '=') calculate();
+    else if (e.key === 'Backspace') deleteLast();
+    else if (e.key === 'Escape') clearAll();
+  });
+
+  updateDisplay();
+</script>
+
+</body>
+</html>
